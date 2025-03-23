@@ -31,14 +31,25 @@ const StressCalculator = () => {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const { toast } = useToast();
 
+  // Ensure currentQuestionIndex is within bounds
+  useEffect(() => {
+    if (currentQuestionIndex < 0) {
+      setCurrentQuestionIndex(0);
+    } else if (questions.length > 0 && currentQuestionIndex >= questions.length) {
+      setCurrentQuestionIndex(questions.length - 1);
+    }
+  }, [currentQuestionIndex]);
+
   // Progress calculation
   const progress = 
     step === 'intro' ? 0 : 
     step === 'results' ? 100 : 
     Math.floor(((currentQuestionIndex + 1) / questions.length) * 100);
 
-  // Get current question
-  const currentQuestion = questions[currentQuestionIndex];
+  // Get current question - with safety check
+  const currentQuestion = questions.length > 0 && currentQuestionIndex >= 0 && currentQuestionIndex < questions.length 
+    ? questions[currentQuestionIndex] 
+    : null;
 
   // Handle starting the assessment
   const handleStart = () => {
@@ -51,6 +62,8 @@ const StressCalculator = () => {
 
   // Handle answer selection
   const handleAnswer = (value: number) => {
+    if (!currentQuestion) return;
+    
     // Update the answer for the current question
     const updatedAnswers = [...answers];
     updatedAnswers[currentQuestionIndex] = {
@@ -131,6 +144,18 @@ const StressCalculator = () => {
     }
   };
 
+  // If questions array is empty, show a friendly message
+  if (questions.length === 0) {
+    return (
+      <Card className="w-full glass-card border-itsss-lightBlue shadow-lg p-8 text-center">
+        <CardTitle className="text-xl mb-4 text-itsss-blue">Stress Assessment</CardTitle>
+        <CardContent>
+          <p>The assessment questions are currently being updated. Please check back later.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="w-full max-w-3xl mx-auto px-4 flex flex-col items-center justify-start min-h-[80vh]">
       {/* Progress bar */}
@@ -173,7 +198,7 @@ const StressCalculator = () => {
           </>
         )}
 
-        {step === 'questions' && (
+        {step === 'questions' && currentQuestion && (
           <>
             <CardHeader className="space-y-2 text-center">
               <CardTitle className="text-2xl font-medium text-itsss-blue">Question {currentQuestionIndex + 1} of {questions.length}</CardTitle>
